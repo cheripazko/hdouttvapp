@@ -1,0 +1,92 @@
+<head>
+    <link href="https://vjs.zencdn.net/7.3.0/video-js.css" rel="stylesheet">
+    <style>
+            body {
+                font-family: 'Open Sans', 'Helvetica', 'Arial', sans-serif;
+                font-size: 16px;
+                margin: 0;
+                background: #191919;
+                padding: 20px;
+            }
+    </style>
+</head>
+<body>
+    <div align='center'>
+        <a id='currentVideoName' style="color:white">Подождите, получаем видео</a>
+        <video id="my-video" class="video-js" controls preload="auto" width="900" height="510" data-setup='{"controls": true, "autoplay": true, "preload": "auto"}'></video>
+    </div>
+    <script src = 'https://vjs.zencdn.net/7.3.0/video.js'></script>
+    <script>       
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        const currentVideoName = document.getElementById('currentVideoName');
+
+        let { session } = require('electron').remote
+        let lastPauseTime = 0;
+
+        const myPlayer = videojs('my-video');
+   
+        ipcRenderer.on('main:sendVideoUrl', async (event, videoUrl, videoName, videoId, nextEpisodeId, pauseTime, volume) => {
+                myPlayer.off('ended');
+                myPlayer.src(videoUrl);
+
+                myPlayer.one('ended', async (event) => {
+                    ipcRenderer.send('main:markEpisode', videoId);
+                    //await turnOnNextEpisode(nextEpisodeId);
+                    ipcRenderer.send('main:getEpisodeId', nextEpisodeId);
+                });
+                myPlayer.on('error', async (err) => {
+                    let code = myPlayer.error().code;
+                    if(code === 4 || code === 2) {
+                        ipcRenderer.send('main:restartCurrentEpisode');
+                    }
+                });
+
+                myPlayer.on('pause', async () => {
+                    //lastPauseTime = myPlayer.currentTime();
+                    ipcRenderer.send('main:saveLastPauseTime', myPlayer.currentTime());
+                });
+
+                myPlayer.on('fullscreenchange', async () => {
+                    ipcRenderer.send('main:fullScreenChange', myPlayer.isFullscreen());
+                });
+
+                myPlayer.on('volumechange', async () => {
+                    ipcRenderer.send('main:saveCurrentVolume', myPlayer.volume());
+                })
+
+                myPlayer.ready(async () => {
+                    currentVideoName.innerHTML = videoName;
+                    //Если не включать autoplay, то надо и в ended запихнуть эту обработку с ready
+                    try {
+                        await myPlayer.play();
+                    }
+                    catch(ex) {}
+                    finally {
+                        await myPlayer.currentTime(pauseTime);
+                        myPlayer.volume(volume);
+                    }
+                });
+        });
+        ipcRenderer.on('main:pause', ()=> {
+            myPlayer.paused()? myPlayer.play() : myPlayer.pause();
+        })
+        ipcRenderer.on('main:changeVolume', (event, isMakeHigher)=> {
+            const volumeInterval = 0.15
+            let volume = myPlayer.volume();
+            isMakeHigher === true ? myPlayer.volume(volume + volumeInterval) : myPlayer.volume(volume - volumeInterval);
+        })
+        ipcRenderer.on('main:muted', (event)=> {
+            let muted = myPlayer.muted();
+            myPlayer.muted(!muted);
+        })
+
+        //УСТАРЕВШИЙ
+        function turnOnNextEpisode(nextEpisodeId) {
+            //Присваиваем текущий эпизод, чтобы не потерять при автопереключениях
+            //episodeJsonUrl = nextEpisodeId;
+
+            ipcRenderer.send('main:getEpisodeId', nextEpisodeId);
+        }
+    </script>
+</body>

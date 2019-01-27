@@ -1,0 +1,39 @@
+<head>
+</head>
+<body>
+    <div id='tittle'>Настройки</div>
+    <form>
+        <div>Пользователь hdout.tv</div>
+        <div>
+            <label>Логин</label>
+            <input id='i_login'/>
+        </div>
+        <div>
+            <label>Пароль</label>
+            <input type="password" id='i_password'/>
+        </div>
+        <button id='submit' type="submit">Сохранить и закрыть</button>  
+    </form>
+ 
+    <script src = 'https://vjs.zencdn.net/7.3.0/video.js'></script>
+    <script>       
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        let { session } = require('electron').remote
+        
+        const button = document.getElementById('submit');
+        const login = document.getElementById('i_login');
+        const password = document.getElementById('i_password');
+
+        button.addEventListener('click', ()=> {
+            ipcRenderer.send('settings:save', login.value, password.value);
+        })
+
+        ipcRenderer.send('settings:getSavedValues');
+     
+        ipcRenderer.on('settings:setSavedValues', async (event, currentLogin, currentPassword) => {
+            login.value = currentLogin;
+            password.value = currentPassword;
+        });
+    </script>
+</body>

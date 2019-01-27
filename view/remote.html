@@ -1,0 +1,69 @@
+<head>
+    <style>
+        body {
+                font-family: 'Open Sans', 'Helvetica', 'Arial', sans-serif;
+                font-size: 46px;
+                margin: 0;
+                
+                padding: 10px;
+            }
+        #play {
+            background-image: url( '/icons/play.png' );
+            background-size: 625px 625px;
+            height: 625px;  
+            width: 625px;
+            align-content: center;
+            margin-bottom: 20px;
+            
+        }
+        #volumeDown {
+            background-image: url( '/icons/volumeDown.png' );
+            height: 300px;  
+            width: 300px;
+            margin-right: 10px;
+            align-content: center;
+        }
+        #volumeUp {
+            background-image: url( '/icons/volumeUp.png' );
+            height: 300px;  
+            width: 300px;
+            
+            align-content: center;
+            
+        }
+    </style>
+</head>
+
+<body>
+
+    <div>HDOUT.TV Control</div>
+    <button id='play' type='button'></button>
+    <div>
+        <button id='volumeDown'type='button' ></button>
+        <button id='volumeUp' type='button' ></button>
+    </div>
+
+    <script>
+        const volumeUp = document.getElementById('volumeUp');
+        const volumeDown = document.getElementById('volumeDown');
+        const play = document.getElementById('play');
+
+        volumeUp.addEventListener('click', () => {
+            sendPostRequest('/volumeUp', 'POST');
+        });
+
+        volumeDown.addEventListener('click', ()=> {
+            sendPostRequest('/volumeDown', 'POST');
+        });
+
+        play.addEventListener('click', () => {
+            sendPostRequest('/play', 'POST');
+        });
+
+        function sendPostRequest(url, method) {
+            let req = new XMLHttpRequest();
+            req.open(method, url, true);
+            req.send(null);
+        }
+    </script>
+</body>
